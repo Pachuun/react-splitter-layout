@@ -1,6 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Pane from './Pane';
+import {Tooltip, IconButton } from '@material-ui/core'
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 
 function clearSelection() {
   if (document.body.createTextRange) {
@@ -30,9 +33,14 @@ class SplitterLayout extends React.Component {
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleTouchMove = this.handleTouchMove.bind(this);
     this.handleSplitterMouseDown = this.handleSplitterMouseDown.bind(this);
+    this.handleTooltipClose = this.handleTooltipClose.bind(this);
+    this.handleTooltipOpen = this.handleTooltipOpen.bind(this);
+    this.handleUpButtonClick = this.handleUpButtonClick.bind(this);
+    this.handleDownButtonClick = this.handleDownButtonClick.bind(this);
     this.state = {
       secondaryPaneSize: 0,
-      resizing: false
+      resizing: false,
+      tooltipShown: false,
     };
   }
 
@@ -152,7 +160,7 @@ class SplitterLayout extends React.Component {
         top: e.clientY
       }, true);
       clearSelection();
-      this.setState({ secondaryPaneSize });
+      this.setState({ secondaryPaneSize, tooltipShown: false });
     }
   }
 
@@ -162,11 +170,47 @@ class SplitterLayout extends React.Component {
 
   handleSplitterMouseDown() {
     clearSelection();
-    this.setState({ resizing: true });
+    this.setState({ resizing: true, tooltipShown: false });
   }
 
   handleMouseUp() {
-    this.setState(prevState => (prevState.resizing ? { resizing: false } : null));
+    this.setState(prevState => (prevState.resizing ? { resizing: false, tooltipShown: true } : null));
+  }
+
+  handleTooltipClose(e) {
+    //console.log(`Tooltip close`, e);
+    this.setState({
+      tooltipShown: false,
+    })
+  }
+
+  handleTooltipOpen(e) {
+    //console.log(`Tooltip open`, e);
+    this.setState({
+      tooltipShown: true,
+    })
+  }
+
+  handleUpButtonClick() {
+    let {secondaryPaneSize} = this.state;
+    let rect = this.container.getBoundingClientRect();
+    let increment = rect.height / 2
+    let result = secondaryPaneSize + increment >= rect.height ? rect.height : secondaryPaneSize + increment;
+
+    this.setState({
+      secondaryPaneSize: result,
+    })
+  }
+
+  handleDownButtonClick() {
+    let {secondaryPaneSize} = this.state;
+    let rect = this.container.getBoundingClientRect();
+    let decrement = rect.height / 2
+    let result = secondaryPaneSize - decrement > 0 ? secondaryPaneSize - decrement : 0;
+
+    this.setState({
+      secondaryPaneSize: result,
+    })
   }
 
   render() {
@@ -179,6 +223,15 @@ class SplitterLayout extends React.Component {
     }
     if (this.state.resizing) {
       containerClasses += ' layout-changing';
+    }
+
+    let upButtonVisible = false;
+    let downButtonVisible = false;
+    if (this.container && this.splitter) {
+      let splitterRect = this.splitter.getBoundingClientRect();
+      let rect = this.container.getBoundingClientRect();
+      upButtonVisible = this.state.secondaryPaneSize < rect.height - splitterRect.height
+      downButtonVisible = this.state.secondaryPaneSize > 0
     }
 
     const children = React.Children.toArray(this.props.children).slice(0, 2);
@@ -195,7 +248,7 @@ class SplitterLayout extends React.Component {
         size = this.state.secondaryPaneSize;
       }
       wrappedChildren.push(
-        <Pane vertical={this.props.vertical} percentage={this.props.percentage} primary={primary} size={size}>
+        <Pane vertical={this.props.vertical} percentage={this.props.percentage} primary={primary} size={size} extraStyles={this.props.extraStyles[i]}>
           {children[i]}
         </Pane>
       );
@@ -206,13 +259,33 @@ class SplitterLayout extends React.Component {
         {wrappedChildren[0]}
         {wrappedChildren.length > 1 &&
           (
-            <div
-              role="separator"
-              className="layout-splitter"
-              ref={(c) => { this.splitter = c; }}
-              onMouseDown={this.handleSplitterMouseDown}
-              onTouchStart={this.handleSplitterMouseDown}
-            />
+            <Tooltip open={this.state.tooltipShown} 
+            onClose={this.handleTooltipClose} 
+            onOpen={this.handleTooltipOpen}
+            interactive 
+            title={
+              <React.Fragment>
+                {downButtonVisible
+                ? <IconButton onClick={this.handleDownButtonClick}>
+                  <ArrowDropDownIcon />
+                </IconButton >
+                : null}
+                {upButtonVisible 
+                ? <IconButton onClick={this.handleUpButtonClick}>
+                  <ArrowDropUpIcon />
+                </IconButton >
+                : null}
+              </React.Fragment>
+            }>
+              <div
+                role="separator"
+                className="layout-splitter"
+                ref={(c) => { this.splitter = c; }}
+                onMouseDown={this.handleSplitterMouseDown}
+                onTouchStart={this.handleSplitterMouseDown}
+              >
+              </div>
+            </Tooltip>
           )
         }
         {wrappedChildren.length > 1 && wrappedChildren[1]}
@@ -232,7 +305,8 @@ SplitterLayout.propTypes = {
   onDragStart: PropTypes.func,
   onDragEnd: PropTypes.func,
   onSecondaryPaneSizeChange: PropTypes.func,
-  children: PropTypes.arrayOf(PropTypes.node)
+  children: PropTypes.arrayOf(PropTypes.node),
+  extraStyles: PropTypes.arrayOf(PropTypes.object),
 };
 
 SplitterLayout.defaultProps = {
@@ -246,7 +320,8 @@ SplitterLayout.defaultProps = {
   onDragStart: null,
   onDragEnd: null,
   onSecondaryPaneSizeChange: null,
-  children: []
+  children: [],
+  extraStyles: [],
 };
 
 export default SplitterLayout;

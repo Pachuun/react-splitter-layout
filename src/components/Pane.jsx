@@ -5,7 +5,7 @@ function Pane(props) {
   const size = props.size || 0;
   const unit = props.percentage ? '%' : 'px';
   let classes = 'layout-pane';
-  const style = {};
+  let style = {};
   if (!props.primary) {
     if (props.vertical) {
       style.height = `${size}${unit}`;
@@ -15,6 +15,10 @@ function Pane(props) {
   } else {
     classes += ' layout-pane-primary';
   }
+  if (props.extraStyles) {
+    style = {...style, ...props.extraStyles}
+  }
+
   return (
     <div className={classes} style={style}>{props.children}</div>
   );
@@ -28,7 +32,8 @@ Pane.propTypes = {
   children: PropTypes.oneOfType([
     PropTypes.arrayOf(PropTypes.node),
     PropTypes.node
-  ])
+  ]),
+  extraStyles: PropTypes.object,
 };
 
 Pane.defaultProps = {
@@ -36,7 +41,8 @@ Pane.defaultProps = {
   primary: false,
   size: 0,
   percentage: false,
-  children: []
+  children: [],
+  extraStyles: {},
 };
 
 export default Pane;
