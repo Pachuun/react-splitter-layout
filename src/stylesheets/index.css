@@ -55,3 +55,11 @@
   cursor: row-resize;
   flex-direction: row;
 }
+
+.layout-splitter .popover {
+  pointer-events: none;
+}
+
+.layout-splitter .popover .paper {
+  pointer-events: all;
+}

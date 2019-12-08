@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Pane from './Pane';
-import {Tooltip, IconButton } from '@material-ui/core'
+import {Tooltip, IconButton, Popover } from '@material-ui/core'
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 
@@ -33,15 +33,21 @@ class SplitterLayout extends React.Component {
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleTouchMove = this.handleTouchMove.bind(this);
     this.handleSplitterMouseDown = this.handleSplitterMouseDown.bind(this);
-    this.handleTooltipClose = this.handleTooltipClose.bind(this);
-    this.handleTooltipOpen = this.handleTooltipOpen.bind(this);
     this.handleUpButtonClick = this.handleUpButtonClick.bind(this);
     this.handleDownButtonClick = this.handleDownButtonClick.bind(this);
+
+    this.handleSplitterMouseEnter = this.handleSplitterMouseEnter.bind(this);
+    this.handleSplitterMouseLeave = this.handleSplitterMouseLeave.bind(this);
+    this.handleTooltipMouseEnter = this.handleTooltipMouseEnter.bind(this);
+    this.handleTooltipMouseLeave = this.handleTooltipMouseLeave.bind(this);
     this.state = {
       secondaryPaneSize: 0,
       resizing: false,
-      tooltipShown: false,
+      tooltipOpen: false,
+      xpos: 0,    
     };
+
+    this.noHide = false;
   }
 
   componentDidMount() {
@@ -160,7 +166,7 @@ class SplitterLayout extends React.Component {
         top: e.clientY
       }, true);
       clearSelection();
-      this.setState({ secondaryPaneSize, tooltipShown: false });
+      this.setState({ secondaryPaneSize, tooltipOpen: false });
     }
   }
 
@@ -170,25 +176,47 @@ class SplitterLayout extends React.Component {
 
   handleSplitterMouseDown() {
     clearSelection();
-    this.setState({ resizing: true, tooltipShown: false });
+    this.setState({ resizing: true, tooltipOpen: false });
   }
 
   handleMouseUp() {
-    this.setState(prevState => (prevState.resizing ? { resizing: false, tooltipShown: true } : null));
+    this.noHide=true;
+    this.setState(prevState => (prevState.resizing ? { resizing: false, tooltipOpen: true } : null));
   }
 
-  handleTooltipClose(e) {
-    //console.log(`Tooltip close`, e);
-    this.setState({
-      tooltipShown: false,
-    })
+  handleSplitterMouseEnter(e) {
+
+    let {tooltipOpen} = this.state;
+
+    if (!tooltipOpen) {
+      this.setState({
+        tooltipOpen: true,
+        xpos: e.pageX,
+      })
+      this.noHide=false;
+    } else {
+      this.noHide = true;
+    }
   }
 
-  handleTooltipOpen(e) {
-    //console.log(`Tooltip open`, e);
-    this.setState({
-      tooltipShown: true,
-    })
+  handleSplitterMouseLeave() {
+    this.noHide=false;
+    setTimeout(() => {
+      if (!this.noHide) {
+        this.setState({
+          tooltipOpen: false,
+        })
+      }
+  }, 500)
+  }
+
+  handleTooltipMouseEnter() {
+    this.noHide = true;
+  }
+
+  handleTooltipMouseLeave() {
+    this.noHide = false;
+    this.handleSplitterMouseLeave();
   }
 
   handleUpButtonClick() {
@@ -213,6 +241,10 @@ class SplitterLayout extends React.Component {
     })
   }
 
+  getPopoverRef(node) {
+    this.popover = node;
+  }
+
   render() {
     let containerClasses = 'splitter-layout';
     if (this.props.customClassName) {
@@ -227,12 +259,15 @@ class SplitterLayout extends React.Component {
 
     let upButtonVisible = false;
     let downButtonVisible = false;
+    let tooltipdY = 0;
     if (this.container && this.splitter) {
       let splitterRect = this.splitter.getBoundingClientRect();
       let rect = this.container.getBoundingClientRect();
+      tooltipdY = rect.height + splitterRect.height - this.state.secondaryPaneSize
       upButtonVisible = this.state.secondaryPaneSize < rect.height - splitterRect.height
       downButtonVisible = this.state.secondaryPaneSize > 0
     }
+
 
     const children = React.Children.toArray(this.props.children).slice(0, 2);
     if (children.length === 0) {
@@ -259,33 +294,45 @@ class SplitterLayout extends React.Component {
         {wrappedChildren[0]}
         {wrappedChildren.length > 1 &&
           (
-            <Tooltip open={this.state.tooltipShown} 
-            onClose={this.handleTooltipClose} 
-            onOpen={this.handleTooltipOpen}
-            interactive 
-            title={
-              <React.Fragment>
-                {downButtonVisible
-                ? <IconButton onClick={this.handleDownButtonClick}>
+            <>
+            <Popover open={this.state.tooltipOpen}
+            anchorReference="anchorPosition"
+            anchorPosition={{ top: tooltipdY, left: this.state.xpos - 45}}
+            onMouseEnter={this.handleTooltipMouseEnter}
+            onMouseLeave={this.handleTooltipMouseLeave}
+            style={{
+              pointerEvents: "none"
+            }}
+            PaperProps={{
+              style:{
+                pointerEvents: "all"
+              }
+            }}
+            disableRestoreFocus
+            
+            >
+              <div ref={(c) => { this.popover = c }}>
+                
+                <IconButton onClick={this.handleDownButtonClick} disabled={!downButtonVisible} >
                   <ArrowDropDownIcon />
-                </IconButton >
-                : null}
-                {upButtonVisible 
-                ? <IconButton onClick={this.handleUpButtonClick}>
+                </IconButton > 
+                <IconButton onClick={this.handleUpButtonClick} disabled={!upButtonVisible}>
                   <ArrowDropUpIcon />
                 </IconButton >
-                : null}
-              </React.Fragment>
-            }>
+                </div>
+              </Popover>
               <div
                 role="separator"
                 className="layout-splitter"
                 ref={(c) => { this.splitter = c; }}
+                onMouseEnter={this.handleSplitterMouseEnter} 
+                onMouseLeave={this.handleSplitterMouseLeave}
                 onMouseDown={this.handleSplitterMouseDown}
                 onTouchStart={this.handleSplitterMouseDown}
               >
               </div>
-            </Tooltip>
+
+            </>
           )
         }
         {wrappedChildren.length > 1 && wrappedChildren[1]}
