@@ -311,7 +311,7 @@ class SplitterLayout extends React.Component {
             disableRestoreFocus
             
             >
-              <div ref={(c) => { this.popover = c }}>
+              <div style={{margin: "5px"}}>
                 
                 <IconButton onClick={this.handleDownButtonClick} disabled={!downButtonVisible} >
                   <ArrowDropDownIcon />
