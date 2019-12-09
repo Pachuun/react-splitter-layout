@@ -48,6 +48,7 @@ class SplitterLayout extends React.Component {
     };
 
     this.noHide = false;
+    this.timeoutId = null;
   }
 
   componentDidMount() {
@@ -201,7 +202,10 @@ class SplitterLayout extends React.Component {
 
   handleSplitterMouseLeave() {
     this.noHide=false;
-    setTimeout(() => {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+    this.timeoutId = setTimeout(() => {
       if (!this.noHide) {
         this.setState({
           tooltipOpen: false,
