@@ -187,16 +187,18 @@ class SplitterLayout extends React.Component {
 
   handleSplitterMouseEnter(e) {
 
-    let {tooltipOpen} = this.state;
+    let {tooltipOpen, resizing} = this.state;
 
-    if (!tooltipOpen) {
-      this.setState({
-        tooltipOpen: true,
-        xpos: e.pageX,
-      })
-      this.noHide=false;
-    } else {
-      this.noHide = true;
+    if (!resizing) {
+      if (!tooltipOpen) {
+        this.setState({
+          tooltipOpen: true,
+          xpos: e.pageX,
+        })
+        this.noHide=false;
+      } else {
+        this.noHide = true;
+      }
     }
   }
 
