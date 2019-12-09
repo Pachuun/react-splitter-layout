@@ -8,9 +8,6 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.css']
   },
-  optimization: {
-    minimize: false
-},
   module: {
     rules: [
       {

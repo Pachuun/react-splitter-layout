@@ -1,9 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Pane from './Pane';
-import {Tooltip, IconButton, Popover } from '@material-ui/core'
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import { IconButton, Popover, Tooltip } from '@material-ui/core'
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+
+
+import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 
 function clearSelection() {
   if (document.body.createTextRange) {
@@ -35,6 +39,9 @@ class SplitterLayout extends React.Component {
     this.handleSplitterMouseDown = this.handleSplitterMouseDown.bind(this);
     this.handleUpButtonClick = this.handleUpButtonClick.bind(this);
     this.handleDownButtonClick = this.handleDownButtonClick.bind(this);
+
+    this.handleFullUpButtonClick = this.handleFullUpButtonClick.bind(this);
+    this.handleFullDownButtonClick = this.handleFullDownButtonClick.bind(this);
 
     this.handleSplitterMouseEnter = this.handleSplitterMouseEnter.bind(this);
     this.handleSplitterMouseLeave = this.handleSplitterMouseLeave.bind(this);
@@ -233,6 +240,7 @@ class SplitterLayout extends React.Component {
 
     this.setState({
       secondaryPaneSize: result,
+      tooltipOpen: false,
     })
   }
 
@@ -244,11 +252,24 @@ class SplitterLayout extends React.Component {
 
     this.setState({
       secondaryPaneSize: result,
+      tooltipOpen: false,
     })
   }
 
-  getPopoverRef(node) {
-    this.popover = node;
+  handleFullUpButtonClick() {
+    let rect = this.container.getBoundingClientRect();
+
+    this.setState({
+      secondaryPaneSize: rect.height,
+      tooltipOpen: false,
+    })
+  }
+
+  handleFullDownButtonClick() {
+    this.setState({
+      secondaryPaneSize: 0,
+      tooltipOpen: false,
+    })
   }
 
   render() {
@@ -295,6 +316,8 @@ class SplitterLayout extends React.Component {
       );
     }
 
+    let buttonStyle = {width:"20px", height:"20px", lineHeight: "20px"}
+
     return (
       <div className={containerClasses} ref={(c) => { this.container = c; }}>
         {wrappedChildren[0]}
@@ -303,7 +326,7 @@ class SplitterLayout extends React.Component {
             <>
             <Popover open={this.state.tooltipOpen}
             anchorReference="anchorPosition"
-            anchorPosition={{ top: tooltipdY, left: this.state.xpos - 45}}
+            anchorPosition={{ top: tooltipdY, left: this.state.xpos - 90}}
             onMouseEnter={this.handleTooltipMouseEnter}
             onMouseLeave={this.handleTooltipMouseLeave}
             style={{
@@ -318,13 +341,26 @@ class SplitterLayout extends React.Component {
             
             >
               <div style={{margin: "5px"}}>
-                
-                <IconButton onClick={this.handleDownButtonClick} disabled={!downButtonVisible} >
-                  <ArrowDropDownIcon />
-                </IconButton > 
-                <IconButton onClick={this.handleUpButtonClick} disabled={!upButtonVisible}>
-                  <ArrowDropUpIcon />
-                </IconButton >
+                <Tooltip title={"Опустить разделитель на всю высоту экрана"} style={{fontSize: '1em'}}>
+                  <IconButton onClick={this.handleFullDownButtonClick} disabled={!downButtonVisible}  >
+                    <ArrowDropDownIcon />
+                  </IconButton >                 
+                </Tooltip>
+                <Tooltip title={"Опустить разделитель на половину высоты экрана"}>
+                  <IconButton onClick={this.handleDownButtonClick} disabled={!downButtonVisible}   >
+                    <KeyboardArrowDownIcon />
+                  </IconButton > 
+                </Tooltip>
+                <Tooltip title={"Поднять разделитель на половину высоты экрана"}>
+                  <IconButton onClick={this.handleUpButtonClick} disabled={!upButtonVisible} >
+                    <KeyboardArrowUpIcon />
+                  </IconButton >
+                </Tooltip>
+                <Tooltip title={"Поднять разделитель на всю высоту экрана"}>
+                  <IconButton onClick={this.handleFullUpButtonClick} disabled={!upButtonVisible} >
+                    <ArrowDropUpIcon />
+                  </IconButton >
+                </Tooltip>
                 </div>
               </Popover>
               <div
